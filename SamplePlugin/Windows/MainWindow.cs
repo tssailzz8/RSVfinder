@@ -29,6 +29,7 @@ public class MainWindow : Window, IDisposable
 
     public override void Draw()
     {
+        ImGui.Text($"RSVa1={Plugin.RSVa1:X} RSFa1={Plugin.RSFa1:X}");
         ImGui.Text($"已储存 {Plugin.Configuration.ZoneData.Count} 组Zone数据记录");
         var index = 0;
         foreach (var (zoneID,zoneData) in Plugin.Configuration.ZoneData)
