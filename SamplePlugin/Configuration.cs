@@ -1,6 +1,7 @@
-﻿using Dalamud.Configuration;
+using Dalamud.Configuration;
 using Dalamud.Plugin;
 using System;
+using System.Collections.Generic;
 
 namespace RSVfinder
 {
@@ -8,6 +9,7 @@ namespace RSVfinder
     public class Configuration : IPluginConfiguration
     {
         public int Version { get; set; } = 0;
+        public Dictionary<ushort,ZoneData> ZoneData { get; set; } = new();
 
         public bool SomePropertyToBeSavedAndWithADefault { get; set; } = true;
 

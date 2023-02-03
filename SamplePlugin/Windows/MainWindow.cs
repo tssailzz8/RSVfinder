@@ -2,7 +2,6 @@ using System;
 using System.Numerics;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
-using ImGuiScene;
 
 namespace RSVfinder.Windows;
 
@@ -12,14 +11,13 @@ public class MainWindow : Window, IDisposable
     private Plugin Plugin;
 
     public MainWindow(Plugin plugin) : base(
-        "My Amazing Window", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
+        "RSVfinder", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
         this.SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(375, 330),
-            MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
+            MaximumSize = new Vector2(1920,1080)
         };
-
 
         this.Plugin = plugin;
     }
@@ -31,18 +29,31 @@ public class MainWindow : Window, IDisposable
 
     public override void Draw()
     {
-        ImGui.Text($"The random config bool is {this.Plugin.Configuration.SomePropertyToBeSavedAndWithADefault}");
-
-        if (ImGui.Button("Show Settings"))
+        ImGui.Text($"已储存 {Plugin.Configuration.ZoneData.Count} 组Zone数据记录");
+        var index = 0;
+        foreach (var (zoneID,zoneData) in Plugin.Configuration.ZoneData)
         {
-            this.Plugin.DrawConfigUI();
+            
+            ImGui.Text($"{index}:{zoneID}包含{zoneData.RSVs.Count}条RSV数据,{zoneData.RSFs.Count}条RSF数据");
+            ImGui.SameLine(ImGui.GetWindowWidth()-50f);
+            if (ImGui.Button($"重放###{index}"))
+            {
+                foreach (var rsv in zoneData.RSVs)
+                {
+                    Plugin.SendRSV(rsv.Key, rsv.Value, rsv.Size);
+                }
+
+                foreach (var rsf in zoneData.RSFs)
+                {
+                    Plugin.SendRSF(rsf.ID, rsf.Data);
+                }
+            }
+            index++;
         }
 
-        ImGui.Spacing();
-
-        ImGui.Text("Have a goat:");
-        ImGui.Indent(55);
-  
-        ImGui.Unindent(55);
+        if (ImGui.Button($"关闭"))
+        {
+            IsOpen = false;
+        }
     }
 }
