@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using Dalamud.Interface.Windowing;
+using Dalamud.Logging;
 using ImGuiNET;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
@@ -39,7 +40,9 @@ public class MainWindow : Window, IDisposable
         foreach (var (zoneID,zoneData) in Plugin.Configuration.ZoneData)
         {
             ImGui.SetCursorPosX(10f);
-            ImGui.Text($"{zoneID:000}:{territorySheet.GetRow(zoneID)?.Name.RawString}:{zoneID}包含{zoneData.RSVs.Count}条RSV数据,{zoneData.RSFs.Count}条RSF数据");
+            ImGui.Text($"{zoneID:000}:{territorySheet.GetRow(zoneID)?.PlaceName.Value!.Name}:{zoneID}包含{zoneData.RSVs.Count}条RSV数据,{zoneData.RSFs.Count}条RSF数据");
+            
+
             ImGui.SameLine(ImGui.GetWindowWidth()-50f);
             if (ImGui.Button($"重放###{index}"))
             {
@@ -51,7 +54,13 @@ public class MainWindow : Window, IDisposable
                 foreach (var rsf in zoneData.RSFs)
                 {
                     Plugin.SendRSF(rsf.ID, rsf.Data);
+                    PluginLog.Information($"Sending:{rsf.ID:X}");
                 }
+                //foreach (var rsf in zoneData.RSFs)
+                //{
+                //    PluginLog.Warning($"{((ulong)rsf.ID)}");
+
+                //}
             }
             index++;
         }

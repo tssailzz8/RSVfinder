@@ -20,7 +20,7 @@ namespace RSVfinder
         public Configuration Configuration { get; init; }
         public WindowSystem WindowSystem = new("RSVfinder");
         public unsafe delegate long RSVDelegate2(IntPtr a1, IntPtr a2,IntPtr a3, int size);
-        public unsafe delegate byte RSFDelegate(IntPtr a1, long a2, IntPtr a3);
+        public unsafe delegate byte RSFDelegate(IntPtr a1, ulong a2, IntPtr a3);
 
         public static Hook<RSVDelegate2> RSVHook2;
         public static Hook<RSFDelegate> RSFHook;
@@ -42,9 +42,9 @@ namespace RSVfinder
             RSVHook2 = Hook<RSVDelegate2>.FromAddress(DalamudApi.SigScanner.ScanText(" E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC CC 48 8B 11 "), RSVDe2);
             RSVa1 = DalamudApi.SigScanner.GetStaticAddressFromSig(
                 "E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC CC 48 8B 11 ");
-            RSFHook = Hook<RSFDelegate>.FromAddress(DalamudApi.SigScanner.ScanText("48 89 5C 24 10 48 89 74 24 18 57 48 83 EC 40 48 83 B9 20 02 00 00 00"),RSFReceiver);
+            RSFHook = Hook<RSFDelegate>.FromAddress(DalamudApi.SigScanner.ScanText("48 8B 0D ?? ?? ?? ?? E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC CC CC CC CC CC 4C 8B C2"),RSFReceiver);
             RSFa1 = DalamudApi.SigScanner.GetStaticAddressFromSig(
-                "48 89 5C 24 10 48 89 74 24 18 57 48 83 EC 40 48 83 B9 20 02 00 00 00");
+                "48 8B 0D ?? ?? ?? ?? E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC CC CC CC CC CC 4C 8B C2");
 
 
             RSVHook2?.Enable();
@@ -102,7 +102,7 @@ namespace RSVfinder
             return RSVHook2.Original(a1, key, value, size);
         }
 
-        public unsafe byte RSFReceiver(IntPtr a1, long a2, IntPtr a3)
+        public unsafe byte RSFReceiver(IntPtr a1, ulong a2, IntPtr a3)
         {
             PluginLog.Warning($"RSF:a2={a2:X}:a3={a3:X}");
             try
@@ -146,20 +146,34 @@ namespace RSVfinder
             Marshal.Copy(key,0,a2,0x30);
             Marshal.Copy(value,0,a3,0x404);
 
-            RSVHook2.Original(RSVa1, a2, a3, size);
+            try
+            {
+                RSVHook2.Original(RSVa1, a2, a3, size);
+            }
+            catch (Exception e)
+            {
+                PluginLog.Error($"{e}");
+            }
 
             Marshal.FreeHGlobal(a2);
             Marshal.FreeHGlobal(a3);
         }
 
-        public unsafe void SendRSF(long id, byte[] data)
+        public unsafe void SendRSF(ulong id, byte[] data)
         {
             //var a2 = Marshal.AllocHGlobal(0x8);
             var a3 = Marshal.AllocHGlobal(0x40);
             //Marshal.Copy(id, 0, a2, 0x8);
             Marshal.Copy(data, 0, a3, 0x40);
 
-            RSFHook.Original(RSFa1, id, a3);
+            try
+            {
+                RSFHook.Original(RSFa1, id, a3);
+            }
+            catch (Exception e)
+            {
+                PluginLog.Error($"{e}");
+            }
 
             //Marshal.FreeHGlobal(a2);
             Marshal.FreeHGlobal(a3);
