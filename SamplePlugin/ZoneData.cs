@@ -19,10 +19,10 @@ namespace RSVfinder
 
     public class RSF
     {
-        public byte[] ID = new byte[8];
+        public long ID = 0;
         public byte[] Data = new byte[64];
 
-        public RSF(byte[] id, byte[] data)
+        public RSF(long id, byte[] data)
         {
             ID = id;
             Data = data;

@@ -2,6 +2,8 @@ using System;
 using System.Numerics;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
+using Lumina.Excel;
+using Lumina.Excel.GeneratedSheets;
 
 namespace RSVfinder.Windows;
 
@@ -9,6 +11,7 @@ public class MainWindow : Window, IDisposable
 {
  
     private Plugin Plugin;
+    private ExcelSheet<TerritoryType> territorySheet = DalamudApi.DataManager.GetExcelSheet<TerritoryType>()!;
 
     public MainWindow(Plugin plugin) : base(
         "RSVfinder", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
@@ -20,6 +23,7 @@ public class MainWindow : Window, IDisposable
         };
 
         this.Plugin = plugin;
+        
     }
 
     public void Dispose()
@@ -34,8 +38,8 @@ public class MainWindow : Window, IDisposable
         var index = 0;
         foreach (var (zoneID,zoneData) in Plugin.Configuration.ZoneData)
         {
-            
-            ImGui.Text($"{index}:{zoneID}包含{zoneData.RSVs.Count}条RSV数据,{zoneData.RSFs.Count}条RSF数据");
+            ImGui.SetCursorPosX(10f);
+            ImGui.Text($"{zoneID:000}:{territorySheet.GetRow(zoneID)?.Name.RawString}:{zoneID}包含{zoneData.RSVs.Count}条RSV数据,{zoneData.RSFs.Count}条RSF数据");
             ImGui.SameLine(ImGui.GetWindowWidth()-50f);
             if (ImGui.Button($"重放###{index}"))
             {
@@ -51,7 +55,7 @@ public class MainWindow : Window, IDisposable
             }
             index++;
         }
-
+        ImGui.SetCursorPosY(ImGui.GetWindowHeight()-30f);
         if (ImGui.Button($"关闭"))
         {
             IsOpen = false;

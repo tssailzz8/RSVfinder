@@ -6,6 +6,7 @@ using RSVfinder.Windows;
 using System;
 using Dalamud.Hooking;
 using System.Runtime.InteropServices;
+using Dalamud.Logging;
 
 namespace RSVfinder
 {
@@ -19,7 +20,7 @@ namespace RSVfinder
         public Configuration Configuration { get; init; }
         public WindowSystem WindowSystem = new("RSVfinder");
         public unsafe delegate long RSVDelegate2(IntPtr a1, IntPtr a2,IntPtr a3, int size);
-        public unsafe delegate byte RSFDelegate(IntPtr a1, IntPtr a2, IntPtr a3);
+        public unsafe delegate byte RSFDelegate(IntPtr a1, long a2, IntPtr a3);
 
         public static Hook<RSVDelegate2> RSVHook2;
         public static Hook<RSFDelegate> RSFHook;
@@ -81,7 +82,7 @@ namespace RSVfinder
         {
             var b1 = Marshal.PtrToStringUTF8((IntPtr)key, 0x30);
             var b2= Marshal.PtrToStringUTF8((IntPtr)value, size);
-            var a = $"{a1:x}:{size:x}:{b1}:{b2}";
+            var a = $"{size:x}:{b1}:{b2}";
 
             var rsv = new RSV(b1, b2, size);
             var zone = DalamudApi.ClientState.TerritoryType;
@@ -101,34 +102,40 @@ namespace RSVfinder
             return RSVHook2.Original(a1, key, value, size);
         }
 
-        public unsafe byte RSFReceiver(IntPtr a1, IntPtr a2, IntPtr a3)
+        public unsafe byte RSFReceiver(IntPtr a1, long a2, IntPtr a3)
         {
-            var b1 = new byte[8];
-            var b2 = new byte[64];
-            Marshal.Copy(a2, b1, 0, 8);
-            Marshal.Copy(a3, b2, 0, 64);
-            var str = $"RSF:{b1:X8}:";
-            foreach (var b in b2)
+            PluginLog.Warning($"RSF:a2={a2:X}:a3={a3:X}");
+            try
             {
-                str += $"{b:X2}";
-            }
-
-            var rsf = new RSF(b1, b2);
-            var zone = DalamudApi.ClientState.TerritoryType;
-            if (Configuration.ZoneData.TryGetValue(zone, out var zoneData))
-            {
-                if (!zoneData.RSFs.Contains(rsf))
+                var b2 = new byte[64];
+                Marshal.Copy(a3, b2, 0, 64);
+                var str = $"RSF:{a2:X8}:";
+                foreach (var b in b2)
                 {
-                    zoneData.RSFs.Add(rsf);
+                    str += $"{b:X2}";
                 }
-            }
-            else
-            {
-                Configuration.ZoneData.Add(zone, new ZoneData());
-                Configuration.ZoneData[zone].RSFs.Add(rsf);
-            }
 
-            log.WriteLog(str);
+                var rsf = new RSF(a2, b2);
+                var zone = DalamudApi.ClientState.TerritoryType;
+                if (Configuration.ZoneData.TryGetValue(zone, out var zoneData))
+                {
+                    if (!zoneData.RSFs.Contains(rsf))
+                    {
+                        zoneData.RSFs.Add(rsf);
+                    }
+                }
+                else
+                {
+                    Configuration.ZoneData.Add(zone, new ZoneData());
+                    Configuration.ZoneData[zone].RSFs.Add(rsf);
+                }
+                log.WriteLog(str);
+            }
+            catch
+            {
+
+            }
+            
             return RSFHook.Original(a1, a2, a3);
         }
 
@@ -145,16 +152,16 @@ namespace RSVfinder
             Marshal.FreeHGlobal(a3);
         }
 
-        public unsafe void SendRSF(byte[] id, byte[] data)
+        public unsafe void SendRSF(long id, byte[] data)
         {
-            var a2 = Marshal.AllocHGlobal(0x8);
+            //var a2 = Marshal.AllocHGlobal(0x8);
             var a3 = Marshal.AllocHGlobal(0x40);
-            Marshal.Copy(id, 0, a2, 0x8);
+            //Marshal.Copy(id, 0, a2, 0x8);
             Marshal.Copy(data, 0, a3, 0x40);
 
-            RSFHook.Original(RSFa1, a2, a3);
+            RSFHook.Original(RSFa1, id, a3);
 
-            Marshal.FreeHGlobal(a2);
+            //Marshal.FreeHGlobal(a2);
             Marshal.FreeHGlobal(a3);
         }
 
