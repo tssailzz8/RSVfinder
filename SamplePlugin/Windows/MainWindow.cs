@@ -43,7 +43,7 @@ public class MainWindow : Window, IDisposable
 
     public override unsafe void Draw()
     {
-        ImGui.Text($"{Plugin.RSFa1:X}");
+        ImGui.Text($"a1:{Plugin.RSFa1:X}: RSF Count?:{Marshal.ReadByte((IntPtr)(*(long*)(*(long*)Plugin.RSFa1 + 0x220) + 8))}");
         ImGui.Text($"已储存:\n " +
                    $"{Plugin.Configuration.ZoneData.RSVs.Count} 组rsv记录\n " +
                    $"{Plugin.Configuration.ZoneData.RSFs.Count} 组rsf记录");

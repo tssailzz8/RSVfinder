@@ -115,8 +115,9 @@ namespace RSVfinder
             {
                 Configuration.ZoneData.RSFs.Add(data);
             }
-            
-            return RSFHook.Original(a1);
+            var result = RSFHook.Original(a1);
+            PluginLog.Warning($"Game Calling RSF:{result}");
+            return result;
         }
 
         public unsafe void SendRSV(RSV_v62* data)
@@ -136,7 +137,7 @@ namespace RSVfinder
             try
             {
                var result = RSFHook.Original(data);
-               PluginLog.Warning($"{result:X}");
+               PluginLog.Warning($"Plugin Calling RSF:{result:X}");
             }
             catch (Exception e)
             {
