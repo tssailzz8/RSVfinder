@@ -9,7 +9,7 @@ namespace RSVfinder
     public class Configuration : IPluginConfiguration
     {
         public int Version { get; set; } = 0;
-        public Dictionary<ushort,ZoneData> ZoneData { get; set; } = new();
+        public ZoneData ZoneData = new ZoneData();
 
         public bool SomePropertyToBeSavedAndWithADefault { get; set; } = true;
 
