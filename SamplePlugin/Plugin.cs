@@ -98,7 +98,7 @@ namespace RSVfinder
         [StructLayout(LayoutKind.Explicit, Size = structSize, Pack = 1)]
         public unsafe struct RSFData
         {
-            public const int structSize = 0x8+0x40;
+            public const int structSize = 0x8+0x40+0x20;
             public const int keySize = 0x8;
             public const int valueSize = 0x40;
             [FieldOffset(0x0)]
@@ -110,7 +110,7 @@ namespace RSVfinder
         public unsafe byte RSFReceiver(RSFData* a1)
         {
             //var data = JsonSerializer.Serialize(a1);
-            var data = Encoding.UTF8.GetString((byte*)a1, sizeof(RSV_v62));
+            var data = Encoding.UTF8.GetString((byte*)a1, sizeof(RSFData));
             if (!Configuration.ZoneData.RSFs.Contains(data))
             {
                 Configuration.ZoneData.RSFs.Add(data);
