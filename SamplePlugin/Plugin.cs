@@ -26,7 +26,7 @@ namespace RSVfinder
 
         public static Hook<RSVDelegate2> RSVHook2;
         public static Hook<RSFDelegate> RSFHook;
-
+        public IntPtr RSFa1;
 
         public Log log;
         public unsafe Plugin(
@@ -43,8 +43,8 @@ namespace RSVfinder
             //RSVa1 = DalamudApi.SigScanner.GetStaticAddressFromSig(
             //    "48 8B 0D ?? ?? ?? ?? E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC CC 48 8B 11");
             RSFHook = Hook<RSFDelegate>.FromAddress(DalamudApi.SigScanner.ScanText("48 8B 11 4C 8D 41 08"),RSFReceiver);
-            //RSFa1 = DalamudApi.SigScanner.GetStaticAddressFromSig(
-            //    "48 8B 0D ?? ?? ?? ?? E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC CC CC CC CC CC 4C 8B C2");
+            RSFa1 = DalamudApi.SigScanner.GetStaticAddressFromSig(
+                "48 8B 0D ?? ?? ?? ?? E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC CC CC CC CC CC 4C 8B C2");
 
 
             RSVHook2?.Enable();
@@ -135,7 +135,8 @@ namespace RSVfinder
         {
             try
             {
-                RSFHook.Original(data);
+               var result = RSFHook.Original(data);
+               PluginLog.Warning($"{result:X}");
             }
             catch (Exception e)
             {

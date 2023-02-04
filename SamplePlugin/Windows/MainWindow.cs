@@ -24,7 +24,7 @@ public class MainWindow : Window, IDisposable
     private IntPtr ptr = Marshal.AllocHGlobal(1080);
 
     public MainWindow(Plugin plugin) : base(
-        "RSVfinder", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
+        "RSVfinder")
     {
         this.SizeConstraints = new WindowSizeConstraints
         {
@@ -43,6 +43,7 @@ public class MainWindow : Window, IDisposable
 
     public override unsafe void Draw()
     {
+        ImGui.Text($"{Plugin.RSFa1:X}");
         ImGui.Text($"已储存:\n " +
                    $"{Plugin.Configuration.ZoneData.RSVs.Count} 组rsv记录\n " +
                    $"{Plugin.Configuration.ZoneData.RSFs.Count} 组rsf记录");
@@ -73,7 +74,6 @@ public class MainWindow : Window, IDisposable
         ImGuiHelpers.ScaledDummy(10f);
         if (ImGui.TreeNode($"RSV"))
         {
-            
             foreach (var rsv in Plugin.Configuration.ZoneData.RSVs)
             {
                 var str = Encoding.UTF8.GetBytes(rsv);
@@ -85,13 +85,26 @@ public class MainWindow : Window, IDisposable
             }
             ImGui.TreePop();
 
-            
+        }
+        if (ImGui.TreeNode($"RSF"))
+        {
+
+            foreach (var rsf in Plugin.Configuration.ZoneData.RSFs)
+            {
+                var str = Encoding.UTF8.GetBytes(rsf);
+                Marshal.Copy(str, 0, ptr, sizeof(Plugin.RSFData));
+                var rsfdata = Marshal.PtrToStructure<Plugin.RSFData>(ptr);
+                ImGui.Text($"{(ulong)Marshal.ReadInt64(ptr):X8}:{(ulong)Marshal.ReadInt64(ptr+8):X8}:{(ulong)Marshal.ReadInt64(ptr + 16):X8}");
+            }
+            ImGui.TreePop();
+
+
         }
         ImGui.Separator();
 
         ImGui.InputText($"Key", data, 0x30);
         ImGui.InputText($"Value", data2, 0x404);
-        if (ImGui.Button($"新增"))
+        if (ImGui.Button($"新增###RSV"))
         {
             var rsv = new Plugin.RSV_v62();
             rsv.size = 0xC;
