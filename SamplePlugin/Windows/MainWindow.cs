@@ -1,12 +1,9 @@
 using System;
-using System.Data;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.Json;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 using ImGuiNET;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
@@ -47,20 +44,21 @@ public class MainWindow : Window, IDisposable
         ImGui.Text($"已储存:\n " +
                    $"{Plugin.Configuration.ZoneData.RSVs.Count} 组rsv记录\n " +
                    $"{Plugin.Configuration.ZoneData.RSFs.Count} 组rsf记录");
-        ImGui.SameLine(ImGui.GetWindowWidth() - 80f);
+        ImGui.SameLine(ImGui.GetWindowWidth() - 100f);
         if (ImGui.Button($"重放"))
         {
             Plugin.Configuration.Save();
             foreach (var rsv in Plugin.Configuration.ZoneData.RSVs)
             {
-                Marshal.Copy(Encoding.UTF8.GetBytes(rsv), 0, ptr, sizeof(Plugin.RSV_v62));
+                var bytes = Encoding.UTF8.GetBytes(rsv);
+                Marshal.Copy(bytes, 0, ptr, Math.Min(bytes.Length, 1080));
                 Plugin.SendRSV((Plugin.RSV_v62*)ptr);
             }
 
             foreach (var rsf in Plugin.Configuration.ZoneData.RSFs)
             {
-                Marshal.Copy(Encoding.UTF8.GetBytes(rsf), 0, ptr, sizeof(Plugin.RSFData));
-                Plugin.SendRSF((Plugin.RSFData*)ptr);
+                Marshal.Copy(Convert.FromBase64String(rsf), 0, ptr, sizeof(Plugin.RSFData));
+                Plugin.SendRSF(ptr);
             }
         }
         ImGui.SameLine();
@@ -77,11 +75,11 @@ public class MainWindow : Window, IDisposable
             foreach (var rsv in Plugin.Configuration.ZoneData.RSVs)
             {
                 var str = Encoding.UTF8.GetBytes(rsv);
-                Marshal.Copy(str,0,ptr,sizeof(Plugin.RSV_v62));
+                Marshal.Copy(str,0,ptr, str.Length);
                 var rsvdata = Marshal.PtrToStructure<Plugin.RSV_v62>(ptr);
                 var i = 0;
                 while (*(rsvdata.key + i) != 0) i++;
-                ImGui.Text($"{Encoding.UTF8.GetString(rsvdata.key, i)} -> {Encoding.UTF8.GetString(rsvdata.value, 0x40)}");
+                ImGui.Text($"{Encoding.UTF8.GetString(rsvdata.key, i)} -> {Encoding.UTF8.GetString(rsvdata.value, (int)rsvdata.size)}");
             }
             ImGui.TreePop();
 
@@ -91,10 +89,10 @@ public class MainWindow : Window, IDisposable
 
             foreach (var rsf in Plugin.Configuration.ZoneData.RSFs)
             {
-                var str = Encoding.UTF8.GetBytes(rsf);
+                var str = Convert.FromBase64String(rsf);
                 Marshal.Copy(str, 0, ptr, sizeof(Plugin.RSFData));
                 var rsfdata = Marshal.PtrToStructure<Plugin.RSFData>(ptr);
-                ImGui.Text($"{(ulong)Marshal.ReadInt64(ptr):X8}:{(ulong)Marshal.ReadInt64(ptr+8):X8}:{(ulong)Marshal.ReadInt64(ptr + 16):X8}");
+                ImGui.Text($"{rsf}");
             }
             ImGui.TreePop();
 
@@ -120,7 +118,7 @@ public class MainWindow : Window, IDisposable
 
 
         
-        ImGui.SetCursorPosY(ImGui.GetWindowHeight()-30f);
+        
         if (ImGui.Button($"关闭"))
         {
             IsOpen = false;

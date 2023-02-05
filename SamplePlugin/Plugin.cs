@@ -8,7 +8,6 @@ using RSVfinder.Windows;
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.Json;
 
 namespace RSVfinder
 {
@@ -22,7 +21,9 @@ namespace RSVfinder
         public Configuration Configuration { get; init; }
         public WindowSystem WindowSystem = new("RSVfinder");
         public unsafe delegate long RSVDelegate2(RSV_v62* a1);
-        public unsafe delegate byte RSFDelegate(RSFData* a1);
+        public unsafe delegate byte RSFDelegate(IntPtr a1);
+
+        private byte[] bytes = new byte[0x48];
 
         public static Hook<RSVDelegate2> RSVHook2;
         public static Hook<RSFDelegate> RSFHook;
@@ -81,14 +82,13 @@ namespace RSVfinder
         private unsafe long RSVDe2(RSV_v62* a1)
         {
             //var data = Marshal.PtrToStructure<RSV_v62>(a1);
-            PluginLog.Log(
-                $"RSV:{Encoding.UTF8.GetString(a1->key, 0x30)}:{Encoding.UTF8.GetString(a1->key, (int)a1->size)}");
+            PluginLog.Debug(
+                $"Received RSV:{Encoding.UTF8.GetString(a1->key, 0x30)} -> {Encoding.UTF8.GetString(a1->key, (int)a1->size)}");
 
-            var data = Encoding.UTF8.GetString((byte*)a1, sizeof(RSV_v62));
+            var data = Encoding.UTF8.GetString((byte*)a1, 0x34 + (int)a1->size);
             if (!Configuration.ZoneData.RSVs.Contains(data))
             {
                 Configuration.ZoneData.RSVs.Add(data);
-                DalamudApi.ChatGui.Print($"New RSV:{Encoding.UTF8.GetString(a1->value,(int)a1->size)}");
             }
 
             return RSVHook2.Original(a1);
@@ -98,7 +98,7 @@ namespace RSVfinder
         [StructLayout(LayoutKind.Explicit, Size = structSize, Pack = 1)]
         public unsafe struct RSFData
         {
-            public const int structSize = 0x8+0x40+0x20;
+            public const int structSize = 0x8 + 0x40;
             public const int keySize = 0x8;
             public const int valueSize = 0x40;
             [FieldOffset(0x0)]
@@ -107,16 +107,19 @@ namespace RSVfinder
             public fixed byte value[valueSize];
         }
 
-        public unsafe byte RSFReceiver(RSFData* a1)
+        public unsafe byte RSFReceiver(IntPtr a1)
         {
-            //var data = JsonSerializer.Serialize(a1);
-            var data = Encoding.UTF8.GetString((byte*)a1, sizeof(RSFData));
+
+            Array.Clear(bytes);
+            Marshal.Copy(a1,bytes,0,sizeof(RSFData));
+            var data = Convert.ToBase64String(bytes);
+
             if (!Configuration.ZoneData.RSFs.Contains(data))
             {
                 Configuration.ZoneData.RSFs.Add(data);
+                PluginLog.Debug($"ADDING RSF:{data}");
             }
             var result = RSFHook.Original(a1);
-            PluginLog.Warning($"Game Calling RSF:{result}");
             return result;
         }
 
@@ -132,12 +135,12 @@ namespace RSVfinder
             }
         }
 
-        public unsafe void SendRSF(RSFData* data)
+        public unsafe void SendRSF(IntPtr data)
         {
             try
             {
                var result = RSFHook.Original(data);
-               PluginLog.Warning($"Plugin Calling RSF:{result:X}");
+               PluginLog.Debug($"Plugin Calling RSF:{result:X}");
             }
             catch (Exception e)
             {
