@@ -16,8 +16,6 @@ public class MainWindow : Window, IDisposable
     private Plugin Plugin;
     private ExcelSheet<TerritoryType> territorySheet = DalamudApi.DataManager.GetExcelSheet<TerritoryType>()!;
 
-    private byte[] data = new byte[0x30];
-    private byte[] data2 = new byte[0x404];
     private IntPtr ptr = Marshal.AllocHGlobal(1080);
 
     public MainWindow(Plugin plugin) : base(
@@ -98,26 +96,6 @@ public class MainWindow : Window, IDisposable
 
 
         }
-        ImGui.Separator();
-
-        ImGui.InputText($"Key", data, 0x30);
-        ImGui.InputText($"Value", data2, 0x404);
-        if (ImGui.Button($"新增###RSV"))
-        {
-            var rsv = new Plugin.RSV_v62();
-            rsv.size = 0xC;
-            Marshal.Copy(data,0,(IntPtr)rsv.key,0x30);
-            Marshal.Copy(data2, 0, (IntPtr)rsv.value, 0x404);
-            var json = Encoding.UTF8.GetString((byte*)&rsv,sizeof(Plugin.RSV_v62));
-            Plugin.Configuration.ZoneData.RSVs.Add(json);
-            Array.Clear(data);
-            Array.Clear(data2);
-            Plugin.Configuration.Save();
-
-        }
-
-
-        
         
         if (ImGui.Button($"关闭"))
         {
